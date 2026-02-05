@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App theme that inherits from Theme.AppCompat -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here if needed -->
+        <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:textColorPrimary">?android:textColorPrimary</item>
+    </style>
+</resources>

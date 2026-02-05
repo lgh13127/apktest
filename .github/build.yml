@@ -1,0 +1,129 @@
+name: Build Android APK
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_HOME: /usr/local/gradle-5.5.1
+      JAVA_HOME: /usr/lib/jvm/temurin-8-jdk-amd64
+      ANDROID_HOME: /usr/local/android-sdk
+      ANDROID_SDK_ROOT: /usr/local/android-sdk
+      PATH: /usr/local/gradle-5.5.1/bin:/usr/local/bin:/usr/bin:/usr/local/android-sdk/tools:/usr/local/android-sdk/platform-tools:/usr/local/android-sdk/build-tools/29.0.3:/usr/lib/jvm/temurin-8-jdk-amd64/bin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. 安装Gradle 5.5.1（兼容Cordova 8.1.0）
+      - name: Install Gradle 5.5.1
+        run: |
+          sudo apt-get remove -y gradle
+          sudo rm -rf /usr/share/gradle*
+          wget -q https://services.gradle.org/distributions/gradle-5.5.1-bin.zip -O /tmp/gradle-5.5.1.zip
+          sudo unzip -q /tmp/gradle-5.5.1.zip -d /usr/local/
+          sudo ln -sf /usr/local/gradle-5.5.1/bin/gradle /usr/bin/gradle
+          gradle -v
+
+      # 2. 安装Node.js 14
+      - name: Install Node.js 14
+        uses: actions/setup-node@v4
+        with:
+          node-version: 14.x
+
+      # 3. 安装Cordova 9.0.0
+      - name: Install Cordova
+        run: |
+          npm install -g cordova@9.0.0
+          cordova -v
+
+      # 4. 安装Android SDK 29
+      - name: Install Android SDK 29
+        run: |
+          sudo mkdir -p $ANDROID_HOME && sudo chmod -R 777 $ANDROID_HOME
+          curl -fsSL -o $ANDROID_HOME/sdk-tools.zip https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
+          unzip -o $ANDROID_HOME/sdk-tools.zip -d $ANDROID_HOME > /dev/null 2>&1
+          yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses > /dev/null 2>&1
+          $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-29" "build-tools;29.0.3" "platform-tools" "extras;android;m2repository" "extras;google;m2repository" > /dev/null 2>&1
+
+      # 5. 配置Java 8
+      - name: Setup Java 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          java-home: ${{ env.JAVA_HOME }}
+
+      # 6. 创建Cordova项目 + 使用Android 8.1.0
+      - name: Create Cordova Project
+        run: |
+          cordova create my-app com.example.myapp MyApp
+          cd my-app
+          echo "<!DOCTYPE html><html><head><meta charset='utf-8'><title>My App</title><style>body{text-align:center;padding:60px;font-size:24px;}</style></head><body><h1>Hello Android!</h1><p>✅ APK BUILD SUCCESS ✅</p></body></html>" > www/index.html
+          cordova platform add android@8.1.0 --save
+          cordova prepare android
+          sudo chmod -R 777 platforms/android/
+          sudo chown -R runner:runner platforms/android/
+
+      # 7. 核心修复：精准给CordovaLib的repositories块添加镜像（正确作用域）
+      - name: Fix CordovaLib Repository (Correct Scope)
+        run: |
+          cd my-app/platforms/android/CordovaLib
+          
+          # ========== 修复1：buildscript的repositories块（classpath依赖解析） ==========
+          # 情况1：如果已有buildscript -> repositories块，在里面添加镜像
+          if grep -q "buildscript {.*repositories {" build.gradle; then
+              sed -i '/buildscript {.*repositories {/a \            maven { url "https://maven.aliyun.com/repository/jcenter" }' build.gradle
+          # 情况2：如果只有buildscript，没有repositories块，先创建再添加
+          elif grep -q "buildscript {" build.gradle; then
+              sed -i '/buildscript {/a \    repositories {\n        maven { url "https://maven.aliyun.com/repository/jcenter" }\n        jcenter()\n        google()\n    }' build.gradle
+          # 情况3：如果没有buildscript块，创建完整块
+          else
+              sed -i '1i buildscript {\n    repositories {\n        maven { url "https://maven.aliyun.com/repository/jcenter" }\n        jcenter()\n        google()\n    }\n    dependencies {\n        classpath "com.android.tools.build:gradle:3.4.0"\n    }\n}' build.gradle
+          fi
+          
+          # ========== 修复2：普通repositories块（项目依赖解析） ==========
+          # 情况1：已有repositories块，添加镜像
+          if grep -q "repositories {" build.gradle; then
+              sed -i '/repositories {/a \        maven { url "https://maven.aliyun.com/repository/jcenter" }' build.gradle
+          # 情况2：无repositories块，创建
+          else
+              sed -i '/android {/i repositories {\n        maven { url "https://maven.aliyun.com/repository/jcenter" }\n        jcenter()\n        google()\n    }' build.gradle
+          fi
+          
+          # ========== 验证修改结果（确保语法正确） ==========
+          echo "===== CordovaLib/build.gradle 关键部分 ====="
+          grep -A 15 "buildscript {" build.gradle | head -20
+          grep -A 10 "repositories {" build.gradle | head -15
+          echo "============================================="
+
+      # 8. 构建APK
+      - name: Build Android APK
+        run: |
+          cd my-app
+          cordova build android --debug --verbose
+
+      # 9. 复制并上传APK
+      - name: Copy & Upload APK
+        run: |
+          APK_PATH="my-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk"
+          if [ -f "$APK_PATH" ]; then
+              cp "$APK_PATH" app-debug.apk
+              ls -lh app-debug.apk
+              echo "✅✅✅ APK生成成功！路径：$(pwd)/app-debug.apk"
+          else
+              echo "❌ APK未找到，打印目录："
+              ls -lh my-app/platforms/android/app/build/outputs/apk/ || true
+              exit 1
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: app-debug.apk
+          if-no-files-found: error

@@ -1,0 +1,2199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>声网音频通话示例</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* 样式部分无修改，保留原有样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .control-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .input-field {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .input-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .input-field input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .input-field input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .input-field input::placeholder {
+            color: #aaa;
+        }
+        
+        .token-hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .token-hint i {
+            color: #ff9800;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 140px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .call-btn {
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .call-btn:hover {
+            background: linear-gradient(to right, #5a6fd8, #6b4190);
+        }
+        
+        .call-btn.in-call {
+            background: linear-gradient(to right, #ff6b6b, #ff5252);
+        }
+        
+        .call-btn.in-call:hover {
+            background: linear-gradient(to right, #ff5252, #e53935);
+        }
+        
+        .mic-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .mic-btn:hover {
+            background: #43a047;
+        }
+        
+        .mic-btn.muted {
+            background: #ff6b6b;
+        }
+        
+        .mic-btn.muted:hover {
+            background: #ff5252;
+        }
+        
+        .members-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .members-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .members-header h2 {
+            color: #333;
+            font-size: 22px;
+        }
+        
+        .members-count {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .members-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .member-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .member-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border-color: #667eea;
+        }
+        
+        .member-card.local {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+        }
+        
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .avatar.local {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        .avatar.remote {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+        }
+        
+        .member-info {
+            flex: 1;
+        }
+        
+        .member-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .member-uid {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .member-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-online {
+            background: #e8f5e9;
+            color: #2E7D32;
+        }
+        
+        .status-muted {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .status-speaker {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .member-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 18px;
+        }
+        
+        .mute-btn {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .mute-btn:hover {
+            background: #ffcdd2;
+        }
+        
+        .mute-btn.muted {
+            background: #e0e0e0;
+            color: #616161;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .call-status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            font-weight: 600;
+            display: none;
+        }
+        
+        .call-status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .call-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* 新增：音频设备选择器样式 */
+        .device-selector {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0f7ff;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .device-selector h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .device-selector h3 i {
+            color: #667eea;
+        }
+        
+        .device-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .device-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .device-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .device-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            color: #333;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .device-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .device-select:disabled {
+            background: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+        }
+        
+        .device-status {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .device-status.active {
+            color: #2E7D32;
+        }
+        
+        .device-status.inactive {
+            color: #c62828;
+        }
+        
+        .device-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .refresh-btn {
+            padding: 10px 15px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .refresh-btn:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+        
+        .refresh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .test-btn {
+            padding: 10px 15px;
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .test-btn:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+        
+        .test-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .volume-meter {
+            margin-top: 10px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            display: none;
+        }
+        
+        .volume-level {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #8BC34A, #FFEB3B, #FF9800, #F44336);
+            border-radius: 4px;
+            transition: width 0.1s ease;
+        }
+        
+        /* 新增：媒体源选项样式 */
+        .source-group {
+            margin-bottom: 15px;
+        }
+        
+        .source-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .source-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .source-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: #f0f0f0;
+            transition: all 0.3s;
+        }
+        
+        .source-option:hover {
+            background: #e0e0e0;
+        }
+        
+        .source-option.active {
+            background: #e3f2fd;
+            border: 1px solid #667eea;
+        }
+        
+        .source-option input[type="radio"] {
+            margin: 0;
+        }
+        
+        .source-option label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        
+        /* 新增：音频处理选项样式 */
+        .processing-group {
+            margin-top: 15px;
+        }
+        
+        .processing-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .processing-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .processing-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: #f0f0f0;
+            transition: all 0.3s;
+        }
+        
+        .processing-option:hover {
+            background: #e0e0e0;
+        }
+        
+        .processing-option.active {
+            background: #e8f5e9;
+            border: 1px solid #4CAF50;
+        }
+        
+        .processing-option input[type="checkbox"] {
+            margin: 0;
+        }
+        
+        .processing-option label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        
+        .tooltip {
+            font-size: 12px;
+            color: #666;
+            margin-left: 4px;
+            cursor: help;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .input-field {
+                width: 100%;
+            }
+            
+            .button-group {
+                justify-content: center;
+            }
+            
+            button {
+                flex: 1;
+                min-width: 120px;
+            }
+            
+            .members-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .device-row {
+                flex-direction: column;
+            }
+            
+            .device-group {
+                min-width: 100%;
+            }
+            
+            .source-options {
+                flex-direction: column;
+            }
+            
+            .processing-options {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .device-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 声网音频通话</h1>
+            <p>随时随地，清晰通话 | 支持多人语音会议</p>
+        </div>
+        
+        <div class="control-panel">
+            <div class="input-group">
+                <div class="input-field">
+                    <label for="channelName"><i class="fas fa-hashtag"></i> 频道名称</label>
+                    <input type="text" id="channelName" placeholder="请输入频道名称，如：meeting-room-1">
+                </div>
+                
+                <div class="input-field">
+                    <label for="tokenInput"><i class="fas fa-key"></i> 鉴权令牌 (Token)</label>
+                    <input type="text" id="tokenInput" placeholder="请输入鉴权令牌 (可选)">
+                    <div class="token-hint">
+                        <i class="fas fa-info-circle"></i>
+                        <span>在安全模式下需要Token，测试时可留空使用临时Token</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="call-btn" id="callToggle">
+                    <i class="fas fa-phone-alt"></i>
+                    <span id="callText">加入通话</span>
+                </button>
+                <button class="mic-btn" id="micToggle" disabled>
+                    <i class="fas fa-microphone"></i>
+                    <span id="micText">开启话筒</span>
+                </button>
+            </div>
+            
+            <!-- 音频设备选择器 -->
+            <div class="device-selector">
+                <h3><i class="fas fa-sliders-h"></i> 音频设备设置</h3>
+                
+                <!-- 新增：媒体源选择 -->
+                <div class="source-group">
+                    <label><i class="fas fa-wave-square"></i> 音频来源</label>
+                    <div class="source-options">
+                        <div class="source-option active" id="micSourceOption">
+                            <input type="radio" id="micSource" name="audioSource" value="microphone" checked>
+                            <label for="micSource">麦克风</label>
+                        </div>
+                        <div class="source-option" id="systemAudioSourceOption">
+                            <input type="radio" id="systemAudioSource" name="audioSource" value="system">
+                            <label for="systemAudioSource">系统音频</label>
+                        </div>
+                        <div class="source-option" id="screenAudioSourceOption">
+                            <input type="radio" id="screenAudioSource" name="audioSource" value="screen">
+                            <label for="screenAudioSource">屏幕音频</label>
+                        </div>
+                        <div class="source-option" id="micScreenSourceOption">
+                            <input type="radio" id="micScreenSource" name="audioSource" value="mic+screen">
+                            <label for="micScreenSource">话筒+屏幕音频</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="device-row">
+                    <div class="device-group">
+                        <label for="micSelect"><i class="fas fa-microphone"></i> 麦克风（输入设备）</label>
+                        <select id="micSelect" class="device-select" disabled>
+                            <option value="">正在获取设备列表...</option>
+                        </select>
+                        <div id="micStatus" class="device-status inactive">
+                            <i class="fas fa-circle"></i>
+                            <span>未选择麦克风</span>
+                        </div>
+                    </div>
+                    
+                    <div class="device-group">
+                        <label for="speakerSelect"><i class="fas fa-volume-up"></i> 扬声器（输出设备）</label>
+                        <select id="speakerSelect" class="device-select" disabled>
+                            <option value="">正在获取设备列表...</option>
+                        </select>
+                        <div id="speakerStatus" class="device-status inactive">
+                            <i class="fas fa-circle"></i>
+                            <span>使用默认扬声器</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 新增：音频处理选项 -->
+                <div class="processing-group">
+                    <label><i class="fas fa-magic"></i> 音频处理</label>
+                    <div class="processing-options">
+                        <div class="processing-option active" id="aecOption">
+                            <input type="checkbox" id="aecToggle" checked>
+                            <label for="aecToggle">回声消除</label>
+                        </div>
+                        <div class="processing-option active" id="ansOption">
+                            <input type="checkbox" id="ansToggle" checked>
+                            <label for="ansToggle">降噪</label>
+                        </div>
+                        <div class="processing-option active" id="agcOption">
+                            <input type="checkbox" id="agcToggle" checked>
+                            <label for="agcToggle">自动增益</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="volume-meter" id="volumeMeter">
+                    <div class="volume-level" id="volumeLevel" style="width: 0%"></div>
+                </div>
+                
+                <div class="device-actions">
+                    <button class="refresh-btn" id="refreshDevices">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>刷新设备列表</span>
+                    </button>
+                    <button class="test-btn" id="testMic">
+                        <i class="fas fa-play"></i>
+                        <span>测试麦克风</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="callStatus" class="call-status">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <span id="statusText">正在连接...</span>
+            </div>
+        </div>
+        
+        <div class="members-container">
+            <div class="members-header">
+                <h2><i class="fas fa-users"></i> 通话成员</h2>
+                <div class="members-count">
+                    <span id="memberCount">0</span> 人在线
+                </div>
+            </div>
+            
+            <div id="membersList" class="members-list">
+                <div class="empty-state">
+                    <i class="fas fa-user-friends"></i>
+                    <p>频道内暂无成员</p>
+                    <p style="font-size: 12px; margin-top: 5px;">加入频道后，成员列表将在这里显示</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Powered by Agora Web SDK v4.21.0 | 确保使用HTTPS环境或localhost</p>
+        </div>
+    </div>
+
+    <!-- 引入声网 Web SDK（推荐最新稳定版） -->
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.21.0.js"></script>
+    <script>
+        // 全局变量
+        let rtcClient = null;
+        let localAudioTrack = null;
+        let localScreenAudioTrack = null;
+        let isPublished = false;
+        let isMicrophoneMuted = true;
+        let isInCall = false;
+        let members = new Map();
+        const APP_ID = "4531524ecba946fd868fc547c6d269d7";
+        
+        // 新增音频设备相关变量
+        let audioInputDevices = [];
+        let audioOutputDevices = [];
+        let selectedMicDeviceId = '';
+        let selectedSpeakerDeviceId = '';
+        let testAudioContext = null;
+        let testAudioAnalyser = null;
+        let testAudioStream = null;
+        let isTestingMic = false;
+        
+        // 新增：媒体源和音频处理变量
+        let currentAudioSource = 'microphone'; // 'microphone', 'system', 'screen', 'mic+screen'
+        let audioProcessingOptions = {
+            AEC: true,  // 回声消除
+            ANS: true,  // 噪声抑制
+            AGC: true   // 自动增益控制
+        };
+        
+        // DOM元素引用
+        let callToggleBtn, micToggleBtn, callTextSpan, micTextSpan;
+        let callStatusDiv, statusTextSpan;
+        let channelNameInput, tokenInput, membersListDiv, memberCountSpan;
+        let micSelect, speakerSelect, refreshDevicesBtn, testMicBtn;
+        let micStatusDiv, speakerStatusDiv, volumeMeter, volumeLevel;
+        
+        // 新增：媒体源和音频处理DOM元素
+        let micSourceOption, systemAudioSourceOption, screenAudioSourceOption, micScreenSourceOption;
+        let micSourceRadio, systemAudioSourceRadio, screenAudioSourceRadio, micScreenSourceRadio;
+        let aecOption, ansOption, agcOption;
+        let aecToggle, ansToggle, agcToggle;
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', async function() {
+            // 获取DOM元素
+            callToggleBtn = document.getElementById('callToggle');
+            micToggleBtn = document.getElementById('micToggle');
+            callTextSpan = document.getElementById('callText');
+            micTextSpan = document.getElementById('micText');
+            callStatusDiv = document.getElementById('callStatus');
+            statusTextSpan = document.getElementById('statusText');
+            channelNameInput = document.getElementById('channelName');
+            tokenInput = document.getElementById('tokenInput');
+            membersListDiv = document.getElementById('membersList');
+            memberCountSpan = document.getElementById('memberCount');
+            
+            // 获取设备选择相关DOM元素
+            micSelect = document.getElementById('micSelect');
+            speakerSelect = document.getElementById('speakerSelect');
+            refreshDevicesBtn = document.getElementById('refreshDevices');
+            testMicBtn = document.getElementById('testMic');
+            micStatusDiv = document.getElementById('micStatus');
+            speakerStatusDiv = document.getElementById('speakerStatus');
+            volumeMeter = document.getElementById('volumeMeter');
+            volumeLevel = document.getElementById('volumeLevel');
+            
+            // 新增：获取媒体源和音频处理DOM元素
+            micSourceOption = document.getElementById('micSourceOption');
+            systemAudioSourceOption = document.getElementById('systemAudioSourceOption');
+            screenAudioSourceOption = document.getElementById('screenAudioSourceOption');
+            micScreenSourceOption = document.getElementById('micScreenSourceOption');
+            micSourceRadio = document.getElementById('micSource');
+            systemAudioSourceRadio = document.getElementById('systemAudioSource');
+            screenAudioSourceRadio = document.getElementById('screenAudioSource');
+            micScreenSourceRadio = document.getElementById('micScreenSource');
+            
+            aecOption = document.getElementById('aecOption');
+            ansOption = document.getElementById('ansOption');
+            agcOption = document.getElementById('agcOption');
+            aecToggle = document.getElementById('aecToggle');
+            ansToggle = document.getElementById('ansToggle');
+            agcToggle = document.getElementById('agcToggle');
+            
+            // 绑定事件监听器
+            if (callToggleBtn) {
+                callToggleBtn.addEventListener('click', toggleCall);
+            }
+            
+            if (micToggleBtn) {
+                micToggleBtn.addEventListener('click', toggleMicrophone);
+            }
+            
+            // 绑定设备选择事件
+            if (micSelect) {
+                micSelect.addEventListener('change', onMicDeviceChange);
+            }
+            
+            if (speakerSelect) {
+                speakerSelect.addEventListener('change', onSpeakerDeviceChange);
+            }
+            
+            if (refreshDevicesBtn) {
+                refreshDevicesBtn.addEventListener('click', refreshAudioDevices);
+            }
+            
+            if (testMicBtn) {
+                testMicBtn.addEventListener('click', toggleMicTest);
+            }
+            
+            // 新增：绑定媒体源选择事件
+            if (micSourceRadio) {
+                micSourceRadio.addEventListener('change', onAudioSourceChange);
+            }
+            
+            if (systemAudioSourceRadio) {
+                systemAudioSourceRadio.addEventListener('change', onAudioSourceChange);
+            }
+            
+            if (screenAudioSourceRadio) {
+                screenAudioSourceRadio.addEventListener('change', onAudioSourceChange);
+            }
+            
+            if (micScreenSourceRadio) {
+                micScreenSourceRadio.addEventListener('change', onAudioSourceChange);
+            }
+            
+            // 新增：绑定音频处理选项事件
+            if (aecToggle) {
+                aecToggle.addEventListener('change', onAudioProcessingChange);
+            }
+            
+            if (ansToggle) {
+                ansToggle.addEventListener('change', onAudioProcessingChange);
+            }
+            
+            if (agcToggle) {
+                agcToggle.addEventListener('change', onAudioProcessingChange);
+            }
+            
+            // 设置初始状态
+            updateMembersDisplay();
+            
+            // 监听页面可见性变化
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            
+            // 监听页面关闭
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            
+            // 初始化时获取音频设备列表
+            await refreshAudioDevices();
+            
+            // 监听设备变化
+            if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+                navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
+            }
+            
+            // 检测浏览器对系统音频捕获的支持
+            checkSystemAudioSupport();
+            
+            console.log('页面初始化完成');
+        });
+        
+        // 检测系统音频支持
+        function checkSystemAudioSupport() {
+            // 检查getDisplayMedia支持（用于系统音频和屏幕音频）
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                systemAudioSourceOption.style.opacity = '0.5';
+                systemAudioSourceOption.style.cursor = 'not-allowed';
+                systemAudioSourceRadio.disabled = true;
+                
+                screenAudioSourceOption.style.opacity = '0.5';
+                screenAudioSourceOption.style.cursor = 'not-allowed';
+                screenAudioSourceRadio.disabled = true;
+                
+                micScreenSourceOption.style.opacity = '0.5';
+                micScreenSourceOption.style.cursor = 'not-allowed';
+                micScreenSourceRadio.disabled = true;
+            }
+        }
+        
+        // 处理页面可见性变化
+        function handleVisibilityChange() {
+            if (document.hidden && isInCall) {
+                console.log('页面进入后台，通话保持中...');
+            } else if (isInCall) {
+                console.log('页面回到前台');
+            }
+        }
+        
+        // 处理页面关闭
+        function handleBeforeUnload(e) {
+            if (isInCall) {
+                const confirmationMessage = '您正在通话中，确定要离开吗？';
+                e.returnValue = confirmationMessage;
+                return confirmationMessage;
+            }
+        }
+        
+        // 初始化客户端
+        async function initRtcClient() {
+            if (rtcClient) return;
+            
+            try {
+                rtcClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+                
+                // 监听远程用户加入
+                rtcClient.on("user-published", async (user, mediaType) => {
+                    try {
+                        await rtcClient.subscribe(user, mediaType);
+                        if (mediaType === "audio") {
+                            const remoteAudioTrack = user.audioTrack;
+                            remoteAudioTrack.play();
+                            
+                            // 添加远程成员到列表
+                            addMember(user.uid, false, remoteAudioTrack);
+                            updateMembersDisplay();
+                            console.log(`已订阅远程用户 ${user.uid} 的音频`);
+                        }
+                    } catch (subscribeErr) {
+                        console.error("订阅远程用户失败：", subscribeErr);
+                    }
+                });
+                
+                // 监听用户取消发布
+                rtcClient.on("user-unpublished", (user, mediaType) => {
+                    const member = members.get(user.uid.toString());
+                    if (member && !member.isLocal) {
+                        member.isMuted = true;
+                        updateMembersDisplay();
+                        console.log(`用户 ${user.uid} 已关闭麦克风`);
+                    }
+                });
+                
+                // 监听用户离开频道
+                rtcClient.on("user-left", (user) => {
+                    removeMember(user.uid);
+                    updateMembersDisplay();
+                    console.log(`用户 ${user.uid} 已离开频道`);
+                });
+                
+                // 监听用户重新发布媒体流
+                rtcClient.on("user-published", async (user, mediaType) => {
+                    if (mediaType === "audio" && members.has(user.uid.toString())) {
+                        try {
+                            await rtcClient.subscribe(user, mediaType);
+                            const remoteAudioTrack = user.audioTrack;
+                            remoteAudioTrack.play();
+                            
+                            const member = members.get(user.uid.toString());
+                            if (member) {
+                                member.audioTrack = remoteAudioTrack;
+                                member.isMuted = false;
+                                updateMembersDisplay();
+                                console.log(`用户 ${user.uid} 重新开启麦克风`);
+                            }
+                        } catch (subscribeErr) {
+                            console.error("重新订阅用户失败：", subscribeErr);
+                        }
+                    }
+                });
+                
+            } catch (initErr) {
+                console.error("客户端初始化失败：", initErr);
+                throw initErr;
+            }
+        }
+        
+        // 新增：媒体源变更处理
+        function onAudioSourceChange(event) {
+            const selectedSource = event.target.value;
+            currentAudioSource = selectedSource;
+            
+            // 更新UI状态
+            updateSourceUI(selectedSource);
+            
+            // 如果在通话中，重新创建音频轨道
+            if (isInCall && localAudioTrack) {
+                switchAudioSource(selectedSource);
+            }
+        }
+        
+        // 新增：更新媒体源UI
+        function updateSourceUI(source) {
+            // 移除所有active类
+            micSourceOption.classList.remove('active');
+            systemAudioSourceOption.classList.remove('active');
+            screenAudioSourceOption.classList.remove('active');
+            micScreenSourceOption.classList.remove('active');
+            
+            // 为当前选中的源添加active类
+            if (source === 'microphone') {
+                micSourceOption.classList.add('active');
+                // 启用麦克风选择
+                micSelect.disabled = false;
+            } else if (source === 'system') {
+                systemAudioSourceOption.classList.add('active');
+                // 禁用麦克风选择（系统音频使用默认设备）
+                micSelect.disabled = true;
+            } else if (source === 'screen') {
+                screenAudioSourceOption.classList.add('active');
+                // 禁用麦克风选择（屏幕音频使用屏幕共享）
+                micSelect.disabled = true;
+            } else if (source === 'mic+screen') {
+                micScreenSourceOption.classList.add('active');
+                // 启用麦克风选择（需要选择麦克风设备）
+                micSelect.disabled = false;
+            }
+        }
+        
+        // 新增：音频处理选项变更
+        function onAudioProcessingChange(event) {
+            audioProcessingOptions.AEC = aecToggle.checked;
+            audioProcessingOptions.ANS = ansToggle.checked;
+            audioProcessingOptions.AGC = agcToggle.checked;
+            
+            // 更新UI状态
+            updateProcessingUI();
+            
+            console.log('音频处理选项已更新:', audioProcessingOptions);
+            
+            // 如果在通话中，重新应用音频处理
+            if (isInCall && localAudioTrack && (currentAudioSource === 'microphone' || currentAudioSource === 'mic+screen')) {
+                applyAudioProcessing();
+            }
+        }
+        
+        // 新增：更新音频处理UI
+        function updateProcessingUI() {
+            if (audioProcessingOptions.AEC) {
+                aecOption.classList.add('active');
+            } else {
+                aecOption.classList.remove('active');
+            }
+            
+            if (audioProcessingOptions.ANS) {
+                ansOption.classList.add('active');
+            } else {
+                ansOption.classList.remove('active');
+            }
+            
+            if (audioProcessingOptions.AGC) {
+                agcOption.classList.add('active');
+            } else {
+                agcOption.classList.remove('active');
+            }
+        }
+        
+        // 新增：切换音频源
+        async function switchAudioSource(sourceType) {
+            if (!isInCall) {
+                return;
+            }
+            
+            try {
+                console.log('切换音频源到:', sourceType);
+                
+                // 停止当前的麦克风测试
+                stopMicTest();
+                
+                // 关闭当前轨道
+                if (localAudioTrack) {
+                    // 先取消发布
+                    if (isPublished) {
+                        await rtcClient.unpublish([localAudioTrack]);
+                    }
+                    
+                    localAudioTrack.close();
+                    localAudioTrack = null;
+                }
+                
+                // 关闭屏幕音频轨道
+                if (localScreenAudioTrack) {
+                    localScreenAudioTrack.close();
+                    localScreenAudioTrack = null;
+                }
+                
+                // 根据选择的源创建新轨道
+                let newAudioTrack;
+                
+                if (sourceType === 'microphone') {
+                    // 创建麦克风音频轨道
+                    const microphoneConfig = {};
+                    
+                    if (selectedMicDeviceId) {
+                        microphoneConfig.microphoneId = selectedMicDeviceId;
+                    }
+                    
+                    // 添加音频处理配置
+                    Object.assign(microphoneConfig, {
+                        encoderConfig: 'music_standard',
+                        AEC: audioProcessingOptions.AEC,
+                        ANS: audioProcessingOptions.ANS,
+                        AGC: audioProcessingOptions.AGC
+                    });
+                    
+                    newAudioTrack = await AgoraRTC.createMicrophoneAudioTrack(microphoneConfig);
+                    
+                } else if (sourceType === 'system' || sourceType === 'screen') {
+                    // 尝试捕获系统音频或屏幕音频
+                    try {
+                        const constraints = {
+                            audio: true,
+                            video: sourceType === 'screen'
+                        };
+                        
+                        const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
+                        
+                        // 从stream中获取音频轨道
+                        const audioTracks = stream.getAudioTracks();
+                        if (audioTracks.length > 0) {
+                            // 使用Agora的createCustomAudioTrack创建轨道
+                            newAudioTrack = await AgoraRTC.createCustomAudioTrack({
+                                mediaStreamTrack: audioTracks[0]
+                            });
+                            
+                            // 保存屏幕共享流（如果需要停止）
+                            if (sourceType === 'screen') {
+                                localScreenAudioTrack = newAudioTrack;
+                            }
+                        } else {
+                            throw new Error('未捕获到音频轨道');
+                        }
+                    } catch (error) {
+                        console.error('捕获系统/屏幕音频失败:', error);
+                        alert(`无法捕获${sourceType === 'system' ? '系统' : '屏幕'}音频: ${error.message}`);
+                        
+                        // 回退到麦克风
+                        micSourceRadio.checked = true;
+                        currentAudioSource = 'microphone';
+                        updateSourceUI('microphone');
+                        await switchAudioSource('microphone');
+                        return;
+                    }
+                } else if (sourceType === 'mic+screen') {
+                    // 创建话筒+屏幕音频混合轨道
+                    newAudioTrack = await createMixedAudioTrack();
+                }
+                
+                if (!newAudioTrack) {
+                    throw new Error('音频轨道创建失败');
+                }
+                
+                // 设置新轨道
+                localAudioTrack = newAudioTrack;
+                
+                // 重新发布
+                if (isPublished) {
+                    await rtcClient.publish([localAudioTrack]);
+                    
+                    // 更新静音状态
+                    localAudioTrack.setEnabled(!isMicrophoneMuted);
+                } else {
+                    localAudioTrack.setEnabled(!isMicrophoneMuted);
+                }
+                
+                // 更新本地成员的音频轨道引用
+                const localMember = Array.from(members.values()).find(m => m.isLocal);
+                if (localMember) {
+                    localMember.audioTrack = localAudioTrack;
+                }
+                
+                console.log('音频源切换成功');
+                updateCallStatus('connected', `已切换到${getSourceName(sourceType)}`);
+                
+            } catch (error) {
+                console.error('切换音频源失败:', error);
+                updateCallStatus('error', `音频源切换失败: ${error.message}`);
+                
+                // 回退到麦克风
+                micSourceRadio.checked = true;
+                currentAudioSource = 'microphone';
+                updateSourceUI('microphone');
+            }
+        }
+        
+        // 新增：创建混合音频轨道（话筒+屏幕音频）
+        async function createMixedAudioTrack() {
+            try {
+                // 1. 获取麦克风音频流
+                const microphoneConfig = {};
+                
+                if (selectedMicDeviceId) {
+                    microphoneConfig.microphoneId = selectedMicDeviceId;
+                }
+                
+                // 添加音频处理配置
+                Object.assign(microphoneConfig, {
+                    encoderConfig: 'music_standard',
+                    AEC: audioProcessingOptions.AEC,
+                    ANS: audioProcessingOptions.ANS,
+                    AGC: audioProcessingOptions.AGC
+                });
+                
+                const micStream = await navigator.mediaDevices.getUserMedia({
+                    audio: microphoneConfig
+                });
+                
+                // 2. 获取屏幕音频流
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    audio: true,
+                    video: true
+                });
+                
+                // 3. 创建音频上下文来混合两个音频流
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 4. 创建音频源节点
+                const micSource = audioContext.createMediaStreamSource(micStream);
+                const screenSource = audioContext.createMediaStreamSource(screenStream);
+                
+                // 5. 创建目标节点（用于输出混合后的音频）
+                const destination = audioContext.createMediaStreamDestination();
+                
+                // 6. 连接音频源到目标节点
+                micSource.connect(destination);
+                screenSource.connect(destination);
+                
+                // 7. 从目标节点获取混合后的音频轨道
+                const mixedStream = destination.stream;
+                const mixedAudioTrack = mixedStream.getAudioTracks()[0];
+                
+                // 8. 保存屏幕共享流以便后续关闭
+                localScreenAudioTrack = {
+                    close: function() {
+                        // 停止所有轨道
+                        micStream.getTracks().forEach(track => track.stop());
+                        screenStream.getTracks().forEach(track => track.stop());
+                        audioContext.close();
+                    }
+                };
+                
+                // 9. 创建Agora自定义音频轨道
+                return await AgoraRTC.createCustomAudioTrack({
+                    mediaStreamTrack: mixedAudioTrack
+                });
+                
+            } catch (error) {
+                console.error('创建混合音频轨道失败:', error);
+                throw new Error(`无法创建混合音频: ${error.message}`);
+            }
+        }
+        
+        // 新增：获取媒体源名称
+        function getSourceName(sourceType) {
+            switch(sourceType) {
+                case 'microphone': return '麦克风';
+                case 'system': return '系统音频';
+                case 'screen': return '屏幕音频';
+                case 'mic+screen': return '话筒+屏幕音频';
+                default: return '未知源';
+            }
+        }
+        
+        // 新增：应用音频处理
+        async function applyAudioProcessing() {
+            if (!localAudioTrack || (currentAudioSource !== 'microphone' && currentAudioSource !== 'mic+screen')) {
+                return;
+            }
+            
+            try {
+                // 重新创建音频轨道以应用新的处理选项
+                await switchAudioSource(currentAudioSource);
+            } catch (error) {
+                console.error('应用音频处理失败:', error);
+            }
+        }
+        
+        // 刷新音频设备列表
+        async function refreshAudioDevices() {
+            if (!refreshDevicesBtn) return;
+            
+            refreshDevicesBtn.disabled = true;
+            refreshDevicesBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 获取中...';
+            
+            try {
+                // 先检查麦克风权限
+                try {
+                    await navigator.mediaDevices.getUserMedia({ audio: true });
+                } catch (err) {
+                    console.warn('麦克风权限未授权:', err);
+                }
+                
+                // 获取所有音频设备
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                
+                // 分离输入和输出设备
+                audioInputDevices = devices.filter(device => device.kind === 'audioinput');
+                audioOutputDevices = devices.filter(device => device.kind === 'audiooutput');
+                
+                console.log('音频输入设备:', audioInputDevices);
+                console.log('音频输出设备:', audioOutputDevices);
+                
+                // 更新麦克风选择下拉框
+                updateDeviceSelect(micSelect, audioInputDevices, selectedMicDeviceId, '使用默认麦克风');
+                
+                // 更新扬声器选择下拉框
+                updateDeviceSelect(speakerSelect, audioOutputDevices, selectedSpeakerDeviceId, '使用默认扬声器');
+                
+                // 更新设备状态显示
+                updateDeviceStatus();
+                
+                // 根据当前媒体源启用/禁用麦克风选择
+                micSelect.disabled = audioInputDevices.length === 0 || 
+                                    (currentAudioSource !== 'microphone' && currentAudioSource !== 'mic+screen');
+                speakerSelect.disabled = audioOutputDevices.length === 0;
+                
+            } catch (error) {
+                console.error('获取音频设备失败:', error);
+                showDeviceError('无法获取音频设备列表');
+            } finally {
+                refreshDevicesBtn.disabled = false;
+                refreshDevicesBtn.innerHTML = '<i class="fas fa-sync-alt"></i> 刷新设备列表';
+            }
+        }
+        
+        // 更新设备选择下拉框
+        function updateDeviceSelect(selectElement, devices, selectedId, defaultText) {
+            if (!selectElement) return;
+            
+            // 清空现有选项
+            selectElement.innerHTML = '';
+            
+            if (devices.length === 0) {
+                selectElement.innerHTML = `<option value="">未检测到设备</option>`;
+                return;
+            }
+            
+            // 添加默认选项
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = defaultText;
+            selectElement.appendChild(defaultOption);
+            
+            // 添加设备选项
+            devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                
+                // 如果有设备标签，使用标签，否则使用设备ID的一部分
+                let deviceName = device.label || `音频设备 ${device.deviceId.substring(0, 8)}...`;
+                
+                // 清理设备名称
+                if (deviceName.includes('Default') || deviceName.includes('默认')) {
+                    deviceName = deviceName.replace(/\(.*?\)/g, '').trim();
+                }
+                
+                option.textContent = deviceName;
+                
+                if (device.deviceId === selectedId) {
+                    option.selected = true;
+                }
+                
+                selectElement.appendChild(option);
+            });
+        }
+        
+        // 更新设备状态显示
+        function updateDeviceStatus() {
+            if (!micStatusDiv || !speakerStatusDiv) return;
+            
+            // 麦克风状态
+            if (selectedMicDeviceId && audioInputDevices.some(d => d.deviceId === selectedMicDeviceId)) {
+                const selectedMic = audioInputDevices.find(d => d.deviceId === selectedMicDeviceId);
+                let deviceName = selectedMic.label || '麦克风';
+                deviceName = deviceName.replace(/\(.*?\)/g, '').trim();
+                micStatusDiv.className = 'device-status active';
+                micStatusDiv.innerHTML = `<i class="fas fa-check-circle"></i> 已选择: ${deviceName.substring(0, 30)}`;
+            } else {
+                micStatusDiv.className = 'device-status inactive';
+                micStatusDiv.innerHTML = `<i class="fas fa-circle"></i> 使用默认麦克风`;
+            }
+            
+            // 扬声器状态
+            if (selectedSpeakerDeviceId && audioOutputDevices.some(d => d.deviceId === selectedSpeakerDeviceId)) {
+                const selectedSpeaker = audioOutputDevices.find(d => d.deviceId === selectedSpeakerDeviceId);
+                let deviceName = selectedSpeaker.label || '扬声器';
+                deviceName = deviceName.replace(/\(.*?\)/g, '').trim();
+                speakerStatusDiv.className = 'device-status active';
+                speakerStatusDiv.innerHTML = `<i class="fas fa-check-circle"></i> 已选择: ${deviceName.substring(0, 30)}`;
+            } else {
+                speakerStatusDiv.className = 'device-status inactive';
+                speakerStatusDiv.innerHTML = `<i class="fas fa-circle"></i> 使用默认扬声器`;
+            }
+        }
+        
+        // 麦克风设备变更处理
+        async function onMicDeviceChange(event) {
+            selectedMicDeviceId = event.target.value;
+            updateDeviceStatus();
+            
+            // 如果在通话中，重新创建音频轨道
+            if (isInCall && localAudioTrack && (currentAudioSource === 'microphone' || currentAudioSource === 'mic+screen')) {
+                await switchMicrophoneDevice();
+            }
+        }
+        
+        // 扬声器设备变更处理
+        async function onSpeakerDeviceChange(event) {
+            selectedSpeakerDeviceId = event.target.value;
+            updateDeviceStatus();
+            
+            // 设置音频输出设备
+            await setAudioOutputDevice();
+        }
+        
+        // 设备变化监听
+        function handleDeviceChange() {
+            console.log('检测到音频设备变化，重新获取设备列表');
+            refreshAudioDevices();
+        }
+        
+        // 显示设备错误
+        function showDeviceError(message) {
+            if (micSelect) {
+                micSelect.innerHTML = `<option value="">${message}</option>`;
+                micSelect.disabled = true;
+            }
+            
+            if (speakerSelect) {
+                speakerSelect.innerHTML = `<option value="">${message}</option>`;
+                speakerSelect.disabled = true;
+            }
+        }
+        
+        // 切换麦克风设备
+        async function switchMicrophoneDevice() {
+            if (!isInCall || !localAudioTrack || (currentAudioSource !== 'microphone' && currentAudioSource !== 'mic+screen')) {
+                return;
+            }
+            
+            try {
+                console.log('切换麦克风设备:', selectedMicDeviceId);
+                
+                // 停止当前的麦克风测试
+                stopMicTest();
+                
+                // 重新创建音频轨道
+                await switchAudioSource(currentAudioSource);
+                
+                console.log('麦克风设备切换成功');
+                updateCallStatus('connected', '麦克风设备已切换');
+                
+            } catch (error) {
+                console.error('切换麦克风设备失败:', error);
+                updateCallStatus('error', `麦克风切换失败: ${error.message}`);
+                
+                // 恢复原设备选择
+                micSelect.value = '';
+                selectedMicDeviceId = '';
+                updateDeviceStatus();
+            }
+        }
+        
+        // 设置音频输出设备
+        async function setAudioOutputDevice() {
+            if (!selectedSpeakerDeviceId) {
+                // 使用默认设备
+                try {
+                    if (localAudioTrack && localAudioTrack.setPlaybackDevice) {
+                        await localAudioTrack.setPlaybackDevice('default');
+                    }
+                    
+                    members.forEach(member => {
+                        if (member.audioTrack && !member.isLocal && member.audioTrack.setPlaybackDevice) {
+                            member.audioTrack.setPlaybackDevice('default');
+                        }
+                    });
+                    
+                    console.log('音频输出设备已恢复为默认');
+                } catch (error) {
+                    console.warn('设置默认音频输出设备失败:', error);
+                }
+                return;
+            }
+            
+            try {
+                if (localAudioTrack && localAudioTrack.setPlaybackDevice) {
+                    await localAudioTrack.setPlaybackDevice(selectedSpeakerDeviceId);
+                }
+                
+                members.forEach(member => {
+                    if (member.audioTrack && !member.isLocal && member.audioTrack.setPlaybackDevice) {
+                        member.audioTrack.setPlaybackDevice(selectedSpeakerDeviceId);
+                    }
+                });
+                
+                console.log('音频输出设备已切换:', selectedSpeakerDeviceId);
+                
+            } catch (error) {
+                console.error('切换音频输出设备失败:', error);
+                speakerSelect.value = '';
+                selectedSpeakerDeviceId = '';
+                updateDeviceStatus();
+            }
+        }
+        
+        // 切换麦克风测试
+        async function toggleMicTest() {
+            if (isTestingMic) {
+                stopMicTest();
+            } else {
+                await startMicTest();
+            }
+        }
+        
+        // 开始麦克风测试
+        async function startMicTest() {
+            if (currentAudioSource !== 'microphone') {
+                alert('麦克风测试仅适用于纯麦克风源');
+                return;
+            }
+            
+            if (!selectedMicDeviceId && audioInputDevices.length > 0) {
+                selectedMicDeviceId = audioInputDevices[0].deviceId;
+                micSelect.value = selectedMicDeviceId;
+                updateDeviceStatus();
+            }
+            
+            if (!selectedMicDeviceId) {
+                alert('请先选择一个麦克风设备进行测试');
+                return;
+            }
+            
+            testMicBtn.disabled = true;
+            testMicBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 准备中...';
+            
+            try {
+                const constraints = {
+                    audio: {
+                        deviceId: selectedMicDeviceId ? { exact: selectedMicDeviceId } : undefined,
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    }
+                };
+                
+                testAudioStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                testAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = testAudioContext.createMediaStreamSource(testAudioStream);
+                testAudioAnalyser = testAudioContext.createAnalyser();
+                
+                source.connect(testAudioAnalyser);
+                testAudioAnalyser.fftSize = 256;
+                
+                volumeMeter.style.display = 'block';
+                volumeLevel.style.width = '0%';
+                
+                isTestingMic = true;
+                testMicBtn.disabled = false;
+                testMicBtn.innerHTML = '<i class="fas fa-stop"></i> 停止测试';
+                
+                updateVolumeMeter();
+                
+                console.log('麦克风测试开始');
+                
+            } catch (error) {
+                console.error('麦克风测试失败:', error);
+                alert(`麦克风测试失败: ${error.message}`);
+                testMicBtn.disabled = false;
+                testMicBtn.innerHTML = '<i class="fas fa-play"></i> 测试麦克风';
+            }
+        }
+        
+        // 停止麦克风测试
+        function stopMicTest() {
+            if (testAudioContext) {
+                testAudioContext.close();
+                testAudioContext = null;
+                testAudioAnalyser = null;
+            }
+            
+            if (testAudioStream) {
+                testAudioStream.getTracks().forEach(track => track.stop());
+                testAudioStream = null;
+            }
+            
+            volumeMeter.style.display = 'none';
+            volumeLevel.style.width = '0%';
+            
+            isTestingMic = false;
+            if (testMicBtn) {
+                testMicBtn.disabled = false;
+                testMicBtn.innerHTML = '<i class="fas fa-play"></i> 测试麦克风';
+            }
+            
+            console.log('麦克风测试停止');
+        }
+        
+        // 更新音量显示
+        function updateVolumeMeter() {
+            if (!isTestingMic || !testAudioAnalyser) return;
+            
+            const dataArray = new Uint8Array(testAudioAnalyser.frequencyBinCount);
+            testAudioAnalyser.getByteFrequencyData(dataArray);
+            
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i];
+            }
+            const average = sum / dataArray.length;
+            const volume = Math.min(100, Math.round((average / 128) * 100));
+            
+            volumeLevel.style.width = volume + '%';
+            
+            requestAnimationFrame(updateVolumeMeter);
+        }
+        
+        // 添加成员
+        function addMember(uid, isLocal = false, audioTrack = null) {
+            if (members.has(uid.toString())) {
+                const existingMember = members.get(uid.toString());
+                existingMember.audioTrack = audioTrack;
+                existingMember.isMuted = false;
+            } else {
+                const member = {
+                    uid: uid,
+                    isLocal: isLocal,
+                    audioTrack: audioTrack,
+                    isMuted: false,
+                    isSpeaking: false
+                };
+                members.set(uid.toString(), member);
+            }
+        }
+        
+        // 移除成员
+        function removeMember(uid) {
+            members.delete(uid.toString());
+        }
+        
+        // 更新成员显示
+        function updateMembersDisplay() {
+            if (!membersListDiv || !memberCountSpan) {
+                console.warn('成员列表元素未找到');
+                return;
+            }
+            
+            if (members.size === 0) {
+                membersListDiv.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-user-friends"></i>
+                        <p>频道内暂无成员</p>
+                        <p style="font-size: 12px; margin-top: 5px;">加入频道后，成员列表将在这里显示</p>
+                    </div>
+                `;
+                memberCountSpan.textContent = "0";
+                return;
+            }
+            
+            memberCountSpan.textContent = members.size.toString();
+            
+            let membersHTML = "";
+            
+            members.forEach(member => {
+                const isLocal = member.isLocal;
+                const uid = member.uid;
+                
+                const colors = ['#667eea', '#764ba2', '#4CAF50', '#FF9800', '#E91E63', '#9C27B0'];
+                const colorIndex = parseInt(uid) % colors.length || 0;
+                
+                let statusClass = "status-online";
+                let statusText = "在线";
+                let statusIcon = "fa-circle";
+                
+                let isActuallyMuted = member.isMuted;
+                if (isLocal) {
+                    isActuallyMuted = isMicrophoneMuted;
+                }
+                
+                if (isActuallyMuted) {
+                    statusClass = "status-muted";
+                    statusText = "已静音";
+                    statusIcon = "fa-microphone-slash";
+                } else if (member.isSpeaking) {
+                    statusClass = "status-speaker";
+                    statusText = "正在发言";
+                    statusIcon = "fa-volume-up";
+                }
+                
+                const muteIcon = isActuallyMuted ? 'fa-microphone-slash' : 'fa-microphone';
+                const muteTitle = isActuallyMuted ? '取消静音' : '静音';
+                const muteBtnClass = isActuallyMuted ? 'mute-btn muted' : 'mute-btn';
+                
+                membersHTML += `
+                    <div class="member-card ${isLocal ? 'local' : ''}">
+                        <div class="avatar ${isLocal ? 'local' : 'remote'}" style="background: ${colors[colorIndex]}">
+                            ${isLocal ? '我' : '用户'}
+                        </div>
+                        <div class="member-info">
+                            <div class="member-name">
+                                ${isLocal ? '我 (本地)' : `用户 ${uid}`}
+                            </div>
+                            <div class="member-uid">UID: ${uid}</div>
+                            <div class="member-status ${statusClass}">
+                                <i class="fas ${statusIcon}"></i>
+                                ${statusText}
+                            </div>
+                        </div>
+                        <div class="member-actions">
+                            <button class="action-btn ${muteBtnClass}" 
+                                    onclick="toggleMemberMute('${uid}')" 
+                                    title="${muteTitle}"
+                                    ${isLocal ? 'disabled' : ''}>
+                                <i class="fas ${muteIcon}"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            membersListDiv.innerHTML = membersHTML;
+        }
+        
+        // 切换成员静音
+        window.toggleMemberMute = function(uid) {
+            const member = members.get(uid);
+            if (!member) return;
+            
+            if (member.isLocal) {
+                toggleMicrophone();
+            } else {
+                if (member.audioTrack) {
+                    if (member.isMuted) {
+                        member.audioTrack.play();
+                    } else {
+                        member.audioTrack.stop();
+                    }
+                    member.isMuted = !member.isMuted;
+                    updateMembersDisplay();
+                }
+            }
+        };
+        
+        // 检测麦克风权限
+        async function checkMicPermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (e) {
+                alert(`麦克风权限检测失败：${e.message}\n请检查：1.浏览器权限 2.非HTTP环境（需HTTPS/localhost）`);
+                console.error("麦克风权限失败：", e);
+                return false;
+            }
+        }
+        
+        // 更新通话状态显示
+        function updateCallStatus(status, message) {
+            if (!callStatusDiv || !statusTextSpan) return;
+            
+            callStatusDiv.style.display = 'block';
+            callStatusDiv.className = 'call-status';
+            
+            if (status === 'connecting') {
+                statusTextSpan.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ${message}`;
+            } else if (status === 'connected') {
+                callStatusDiv.classList.add('connected');
+                statusTextSpan.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            } else if (status === 'disconnected') {
+                callStatusDiv.classList.add('disconnected');
+                statusTextSpan.innerHTML = `<i class="fas fa-times-circle"></i> ${message}`;
+            } else if (status === 'error') {
+                callStatusDiv.classList.add('disconnected');
+                statusTextSpan.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            }
+            
+            if (status === 'connected' || status === 'error') {
+                setTimeout(() => {
+                    if (callStatusDiv && (callStatusDiv.classList.contains('connected') || 
+                         callStatusDiv.classList.contains('disconnected'))) {
+                        callStatusDiv.style.display = 'none';
+                    }
+                }, 5000);
+            }
+        }
+        
+        // 切换通话状态
+        async function toggleCall() {
+            if (!callToggleBtn || !micToggleBtn) return;
+            
+            if (isInCall) {
+                await leaveChannel();
+            } else {
+                await joinChannel();
+            }
+        }
+        
+        // 加入频道
+        async function joinChannel() {
+            if (!channelNameInput) {
+                alert("无法获取频道输入框");
+                return;
+            }
+            
+            const channelName = channelNameInput.value.trim();
+            if (!channelName) {
+                alert("请输入有效的频道名！");
+                return;
+            }
+            
+            // 根据选择的媒体源检测权限
+            if (currentAudioSource === 'microphone' || currentAudioSource === 'mic+screen') {
+                const hasMicPerm = await checkMicPermission();
+                if (!hasMicPerm) return;
+            }
+            
+            updateCallStatus('connecting', '正在加入频道...');
+            callToggleBtn.disabled = true;
+            
+            try {
+                await initRtcClient();
+                
+                // 根据选择的媒体源创建音频轨道
+                let audioTrack;
+                
+                if (currentAudioSource === 'microphone') {
+                    const microphoneConfig = {};
+                    
+                    if (selectedMicDeviceId) {
+                        microphoneConfig.microphoneId = selectedMicDeviceId;
+                    }
+                    
+                    // 添加音频处理配置
+                    Object.assign(microphoneConfig, {
+                        encoderConfig: 'music_standard',
+                        AEC: audioProcessingOptions.AEC,
+                        ANS: audioProcessingOptions.ANS,
+                        AGC: audioProcessingOptions.AGC
+                    });
+                    
+                    audioTrack = await AgoraRTC.createMicrophoneAudioTrack(microphoneConfig);
+                    
+                } else if (currentAudioSource === 'system' || currentAudioSource === 'screen') {
+                    // 尝试捕获系统音频或屏幕音频
+                    try {
+                        const constraints = {
+                            audio: true,
+                            video: currentAudioSource === 'screen'
+                        };
+                        
+                        const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
+                        const audioTracks = stream.getAudioTracks();
+                        
+                        if (audioTracks.length > 0) {
+                            audioTrack = await AgoraRTC.createCustomAudioTrack({
+                                mediaStreamTrack: audioTracks[0]
+                            });
+                            
+                            if (currentAudioSource === 'screen') {
+                                localScreenAudioTrack = audioTrack;
+                            }
+                        } else {
+                            throw new Error('未捕获到音频轨道');
+                        }
+                    } catch (error) {
+                        console.error('捕获系统/屏幕音频失败:', error);
+                        alert(`无法捕获${currentAudioSource === 'system' ? '系统' : '屏幕'}音频: ${error.message}\n将切换到麦克风模式`);
+                        
+                        // 切换到麦克风模式
+                        micSourceRadio.checked = true;
+                        currentAudioSource = 'microphone';
+                        updateSourceUI('microphone');
+                        
+                        // 重新尝试加入（简化处理）
+                        callToggleBtn.disabled = false;
+                        updateCallStatus('error', '音频源不可用，请切换后重试');
+                        return;
+                    }
+                } else if (currentAudioSource === 'mic+screen') {
+                    // 创建话筒+屏幕音频混合轨道
+                    audioTrack = await createMixedAudioTrack();
+                }
+                
+                if (!audioTrack || !audioTrack.play) {
+                    throw new Error("音频轨道创建失败：非有效轨道实例");
+                }
+                
+                localAudioTrack = audioTrack;
+                console.log(`${getSourceName(currentAudioSource)}音频轨道创建成功`);
+                
+                // 获取用户输入的Token
+                const userToken = tokenInput.value.trim();
+                const token = userToken || null;
+                
+                // 加入频道
+                const uid = await rtcClient.join(APP_ID, channelName, token);
+                console.log(`加入频道【${channelName}】成功，UID: ${uid}`);
+                
+                // 添加本地成员到列表
+                addMember(uid, true, localAudioTrack);
+                updateMembersDisplay();
+                
+                // 发布音频
+                if (!isPublished) {
+                    await rtcClient.publish([localAudioTrack]);
+                    isPublished = true;
+                    console.log("本地音频发布成功");
+                    
+                    micTextSpan.textContent = '关闭话筒';
+                    micToggleBtn.classList.add('muted');
+                    micToggleBtn.querySelector('i').className = 'fas fa-microphone-slash';
+                    localAudioTrack.setEnabled(true);
+                    isMicrophoneMuted = false;
+                    
+                    const localMember = Array.from(members.values()).find(m => m.isLocal);
+                    if (localMember) {
+                        localMember.isMuted = false;
+                        updateMembersDisplay();
+                    }
+                }
+                
+                // 设置音频输出设备
+                await setAudioOutputDevice();
+                
+                // 更新通话状态
+                isInCall = true;
+                
+                // 更新按钮状态
+                callToggleBtn.disabled = false;
+                callToggleBtn.classList.add('in-call');
+                callTextSpan.textContent = '退出通话';
+                callToggleBtn.querySelector('i').className = 'fas fa-phone-slash';
+                
+                // 启用话筒按钮
+                micToggleBtn.disabled = false;
+                
+                // 更新状态显示
+                updateCallStatus('connected', `已加入频道：${channelName} | UID：${uid} | 音频源：${getSourceName(currentAudioSource)}`);
+                
+            } catch (e) {
+                console.error("加入/发布失败（详细信息）：", {
+                    message: e.message,
+                    code: e.code,
+                    stack: e.stack
+                });
+                
+                let errMsg = `加入通话失败：${e.message}`;
+                if (e.code === "INVALID_PARAMS") {
+                    errMsg += "\n原因：发布的轨道非有效本地轨道（轨道创建失败/参数格式错误）";
+                } else if (e.code === "CAN_NOT_GET_GATEWAY_SERVER") {
+                    errMsg += "\n原因：Token/频道名/AppID 不匹配，或鉴权模式冲突";
+                } else if (e.message.includes("permission")) {
+                    errMsg += "\n原因：麦克风权限被拒绝";
+                } else if (e.message.includes("token")) {
+                    errMsg += "\n原因：Token无效或过期，请检查并重新输入";
+                }
+                
+                callToggleBtn.disabled = false;
+                isInCall = false;
+                
+                updateCallStatus('error', errMsg);
+                
+                if (localAudioTrack) {
+                    localAudioTrack.close();
+                    localAudioTrack = null;
+                }
+                isPublished = false;
+            }
+        }
+        
+        // 切换麦克风开关
+        function toggleMicrophone() {
+            if (!localAudioTrack || !micToggleBtn || !micTextSpan) return;
+            
+            if (isMicrophoneMuted) {
+                localAudioTrack.setEnabled(true);
+                micToggleBtn.querySelector('i').className = 'fas fa-microphone-slash';
+                micTextSpan.textContent = '关闭话筒';
+                micToggleBtn.classList.add('muted');
+                console.log("麦克风已开启");
+                
+                const localMember = Array.from(members.values()).find(m => m.isLocal);
+                if (localMember) {
+                    localMember.isMuted = false;
+                }
+            } else {
+                localAudioTrack.setEnabled(false);
+                micToggleBtn.querySelector('i').className = 'fas fa-microphone';
+                micTextSpan.textContent = '开启话筒';
+                micToggleBtn.classList.remove('muted');
+                console.log("麦克风已关闭");
+                
+                const localMember = Array.from(members.values()).find(m => m.isLocal);
+                if (localMember) {
+                    localMember.isMuted = true;
+                }
+            }
+            
+            isMicrophoneMuted = !isMicrophoneMuted;
+            updateMembersDisplay();
+        }
+        
+        // 退出频道
+        async function leaveChannel() {
+            try {
+                stopMicTest();
+                
+                updateCallStatus('connecting', '正在离开频道...');
+                callToggleBtn.disabled = true;
+                
+                if (localAudioTrack) {
+                    localAudioTrack.close();
+                    localAudioTrack = null;
+                    console.log("本地音频轨道已释放");
+                }
+                
+                if (localScreenAudioTrack) {
+                    localScreenAudioTrack.close();
+                    localScreenAudioTrack = null;
+                    console.log("屏幕音频轨道已释放");
+                }
+                
+                if (rtcClient) {
+                    await rtcClient.leave();
+                    rtcClient = null;
+                    console.log("已退出频道");
+                }
+                
+                members.clear();
+                updateMembersDisplay();
+                
+                isPublished = false;
+                isMicrophoneMuted = true;
+                isInCall = false;
+                
+                callToggleBtn.disabled = false;
+                callToggleBtn.classList.remove('in-call');
+                callTextSpan.textContent = '加入通话';
+                callToggleBtn.querySelector('i').className = 'fas fa-phone-alt';
+                
+                micToggleBtn.disabled = true;
+                micToggleBtn.querySelector('i').className = 'fas fa-microphone';
+                micTextSpan.textContent = '开启话筒';
+                micToggleBtn.classList.remove('muted');
+                
+                updateCallStatus('disconnected', '已退出通话');
+                
+            } catch (leaveErr) {
+                console.error("退出频道失败：", leaveErr);
+                updateCallStatus('error', `退出通话失败：${leaveErr.message}`);
+                callToggleBtn.disabled = false;
+            }
+        }
+        
+        // 让函数在全局可用
+        window.toggleCall = toggleCall;
+        window.toggleMicrophone = toggleMicrophone;
+    </script>
+</body>
+</html>

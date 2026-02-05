@@ -1,0 +1,25 @@
+
+// build.gradle (root) — 兼容较旧系统 Gradle 的写法
+buildscript {
+    ext.kotlin_version = '1.8.22'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.1.1"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+// 使用兼容写法定义 clean 任务（避免 tasks.register 导致旧 Gradle 失败）
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

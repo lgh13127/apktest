@@ -1,0 +1,102 @@
+name: Build APK (assembleDebug) and upload artifact
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends wget unzip
+
+      - name: Prepare Android SDK directory and env
+        run: |
+          SDK_DIR="$RUNNER_TEMP/android-sdk"
+          mkdir -p "$SDK_DIR"
+          echo "ANDROID_HOME=$SDK_DIR" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$SDK_DIR" >> $GITHUB_ENV
+          # ensure cmdline-tools target dir exists
+          mkdir -p "$SDK_DIR/cmdline-tools"
+
+      - name: Install Android command line tools
+        run: |
+          SDK_DIR="$RUNNER_TEMP/android-sdk"
+          cd "$SDK_DIR"
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d cmdline-tools
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools/cmdline-tools/* cmdline-tools/latest/ || true
+          echo "PATH=$SDK_DIR/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+          echo "Installed Android commandline tools into $SDK_DIR"
+
+      - name: Accept Android SDK licenses
+        run: |
+          SDK_DIR="$RUNNER_TEMP/android-sdk"
+          yes | "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --licenses
+
+      - name: Install Android SDK components
+        run: |
+          SDK_DIR="$RUNNER_TEMP/android-sdk"
+          "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_DIR" "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+
+      - name: Install Gradle 8.1.1 on runner
+        run: |
+          GRADLE_VERSION=8.1.1
+          wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O "$RUNNER_TEMP/gradle.zip"
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "GRADLE_HOME=$RUNNER_TEMP/gradle-${GRADLE_VERSION}" >> $GITHUB_ENV
+          echo "PATH=$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Show Java/Gradle/SDK info
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version || true
+          gradle --version || true
+          echo "ANDROID_HOME=${ANDROID_HOME}"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT}"
+          ls -la "$RUNNER_TEMP/android-sdk"
+
+      - name: Build debug APK (capture log)
+        run: |
+          set -o pipefail
+          mkdir -p build-logs
+          if [ -x "./gradlew" ]; then
+            ./gradlew clean assembleDebug --no-daemon --stacktrace 2>&1 | tee build-logs/build.log
+            EXIT_CODE=${PIPESTATUS[0]}
+          else
+            gradle clean assembleDebug --no-daemon --stacktrace 2>&1 | tee build-logs/build.log
+            EXIT_CODE=${PIPESTATUS[0]}
+          fi
+          echo "Gradle exit code: $EXIT_CODE"
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            echo "::error::Gradle failed, see build-logs/build.log"
+            exit $EXIT_CODE
+          fi
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload build log (for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: build-logs/build.log

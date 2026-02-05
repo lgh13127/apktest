@@ -1,0 +1,3 @@
+// settings.gradle (minimal, compatible)
+rootProject.name = "MyAgoraWebApp"
+include(":app")
