@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        // 如果用户授予了系统权限，允许原始的 Web  permission 请求并启动前台保活服务
+        // 如果用户授予了系统权限，允许原始的 Web permission 请求并启动前台保活服务
         if (isGranted) {
             pendingPermissionRequest?.let { req ->
                 try {
@@ -37,7 +37,11 @@ class MainActivity : AppCompatActivity() {
             startMicForegroundServiceIfNeeded()
         } else {
             // 权限被拒绝：清理 pending 请求
-            pendingPermissionRequest?.deny()
+            try {
+                pendingPermissionRequest?.deny()
+            } catch (e: Exception) {
+                // ignore
+            }
             pendingPermissionRequest = null
         }
     }
@@ -46,6 +50,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // 注意：布局里 WebView 的 id 为 "@+id/webView"
         webView = findViewById(R.id.webView)
 
         val ws = webView.settings
@@ -62,10 +67,10 @@ class MainActivity : AppCompatActivity() {
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest) {
                 runOnUiThread {
-                    // 仅在需要麦克风时做特殊处理
-                    val needsAudio = request.resources.any { it.contains("AUDIO_CAPTURE") || it.contains("android.webkit.resource.AUDIO_CAPTURE") }
+                    val needsAudio = request.resources.any {
+                        it.contains("AUDIO_CAPTURE") || it.contains("android.webkit.resource.AUDIO_CAPTURE")
+                    }
                     if (needsAudio) {
-                        // 如果系统权限已被授予，直接允许页面请求并启动后台服务
                         if (ContextCompat.checkSelfPermission(
                                 this@MainActivity,
                                 Manifest.permission.RECORD_AUDIO
@@ -78,12 +83,10 @@ class MainActivity : AppCompatActivity() {
                             }
                             startMicForegroundServiceIfNeeded()
                         } else {
-                            // 保存 pending request，发起系统权限请求（授权回调会 grant）
                             pendingPermissionRequest = request
                             requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
                     } else {
-                        // 非麦克风权限（例如摄像头/捕获屏幕等），直接授权网页请求（请按安全策略调整）
                         try {
                             request.grant(request.resources)
                         } catch (e: Exception) {
@@ -94,7 +97,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 加载本地页面（注意：index.html 在 assets 根目录）
+        // 加载本地页面（index.html 放在 assets 根目录）
         webView.loadUrl("file:///android_asset/index.html")
     }
 
@@ -103,7 +106,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startMicForegroundServiceIfNeeded() {
-        // 启动前台服务以保活麦克风（MicForegroundService 需在项目中实现）
         try {
             val intent = Intent(this, MicForegroundService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
