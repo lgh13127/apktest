@@ -5,15 +5,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- Android 8.0+ 前台服务必须 -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" /> <!-- 音频前台服务（Android 12+） -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" /> <!-- 忽略电池优化 -->
     <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- 唤醒锁，防止设备休眠 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /> <!-- 开机自启 -->
-    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" /> <!-- 通知权限（保活辅助） -->    
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" /> <!-- 通知权限（保活辅助） -->
 
-    <!-- 2. 声明应用为“电话类应用”（提升后台优先级） -->
+    <!-- 设备特性声明（保留原来的非强制电话特性） -->
     <uses-feature
         android:name="android.hardware.telephony"
         android:required="false" />
@@ -24,10 +22,8 @@
         android:allowBackup="true"
         android:usesCleartextTraffic="true"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">  <!-- <- 添加这行 -->
+        android:theme="@style/AppTheme">
 
-        <!-- 3. 声明后台保活服务（前台服务，避免被系统杀死） -->
-        
         <activity android:name=".MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden">
@@ -36,6 +32,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 声明前台麦克风服务（需要你在项目中新建 MicForegroundService.kt） -->
+        <service
+            android:name=".MicForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
     </application>
 
 </manifest>
